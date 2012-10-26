@@ -1,0 +1,127 @@
+#Passo a passo configuração da instância linux - arquitetura do servidor
+#utilize o video para acompanhar o processo com maiores detalhes: http://www.youtube.com/watch?v=mCbiBcE1lA0&feature=plcp
+
+-------- CRIAÇÃO DA INSTÂNCIA E ACESSO VIA SSH --------------
+#SO
+# A amazon utiliza o RedHat Enterprise para as suas instâncias default em linux, utilizei a quickstart micro linux 64bits  (segunda opção)
+# existe o redhat nativo mas ele é muito crú, utilize a da amazon
+
+#guarde com muito carinho a chave gerada (se ele nao gerar solicite uma nova chave), ela será utiliza SEMPRE e é altamente sigilosa, será utilizada para autenticação segura
+
+#libere as seguintes portas
+SSH (22)
+HTTP (80)
+MYSQL (3306)
+27017 --utilizado pelo mongodb ;)
+
+#cria a instância e aguarde a configuração dela, no linux já inicializa direto ;)
+
+#baixe o PuTTY (terminal SSH) e o configure seguindo a explicação no video
+# assim que tiver acesso via SSH basta seguir os comandos abaixo, chega de interface, agora é linha do comando ;)
+
+--------- CONFIGURAÇÃO -------------
+#coloque em nivel root
+sudo -i
+
+#atualize os repositórios e confirme quaisquer arquivos a serem baixados
+yum upgrade
+
+#verifique quais portas estão abertas com o comando lsof -i
+lsof -i
+
+#para configurar o mysql vamos utilizar o myphpadmin, para isso é necessário ter o servidor http instalado
+#de forma padrão, nenhuma porta http está instalado pois nao existe o servidor http instalado, utilize o comando abaixo para instalar (httpd - TEM O 'd' NO FINAL MESMO)
+yum install httpd
+
+#inicie o serviço do servidor http
+service httpd start
+
+#verifique novamente as portas e perceba que o apache foi instalado e esta rodando!
+lsof -i
+
+#utilize o google chrome e acesse o endereço do servidor de database para testar se o apache está acessível
+
+#instale o php e o mysql
+yum -y install php mysql
+
+#instale o mysql
+yum install mysql-server
+
+#verifique a ultima versão do rpmforge via google chrome http://pkgs.repoforge.org/rpmforge-release/
+#baixe a ultima versao usando o wget
+wget http://pkgs.repoforge.org/rpmforge-release/rpmforge-release-0.5.2-2.el6.rf.i686.rpm
+
+#instale o pacote
+rpm -Uvh rpmforge-release-0.5.2-2.el6.rf.i686.rpm
+
+#instale o phpmyadmin
+yum install phpmyadmin
+
+##############
+# Utilizando o comando 'vi'
+# O vi é um editor simples de texto
+# em modo root (sudo -i) basta executar vi caminho_do_arquivo
+#   para entrar no modo de edição pressione a tecla INSERT
+#   para sair do modo de edição pressione ESC
+#   para sair do arquivo SEM salvar digite :quit!
+#   para salvar e sair do arquivo digite :x
+#############
+
+
+#edite o arquivo de configuração do phpmyadmin
+vi /etc/httpd/conf.d/phpmyadmin.conf 
+
+#entre no modo de edição
+tecla INSERT
+
+# utilize o jogo da velha (#) para comentar as seguintes linhas
+  Order Deny,Allow
+  Deny from all
+
+# troque o ip interno pelo IP do síndiconet e salve o arquivo conforme abaixo
+tecla ESC
+:x
+
+#reinicie o servidor web e o mysql para que eles carreguem novamente o arquivo de configuração
+service httpd restart
+service mysqld restart
+
+#criando a senha para o phpmyadmin
+/usr/bin/mysqladmin -u root password '102030@a'
+
+#altere outro arquivo de configuração do phpmyadmin
+vi /usr/share/phpmyadmin/config.inc.php
+
+#troque o método de autenticação de 'cookie' para 'http' e salve o arquivo
+## original ###
+...
+$cfg['Servers'][$i]['auth_type'] = 'cookie';
+...
+## alterado ###
+...
+$cfg['Servers'][$i]['auth_type'] = 'http';
+...
+####
+
+#acesse novamente o endereço do servidor de database, e entre na pasta phpmyadmin, pronto!!!
+ex: http://54.232.123.164/phpmyadmin/
+user: root
+senha: 102030@a
+
+
+################## SNAPSHOT DATABASE SERVER ###########################
+#
+# criei um snapshot com o server já configurado segundo este modelo
+#  basta utilizá-lo em um novo server como base ou em caso de
+#  necessidade de restauração
+#
+#######################################################################
+
+-------------- REFERÊNCIAS --------------------
+http://www.youtube.com/watch?v=mCbiBcE1lA0&feature=plcp
+http://www.mongodb.org/display/DOCS/Amazon+EC2
+http://www.10gen.com/static/downloads/AWS_NoSQL_MongoDB.pdf
+http://www.if-not-true-then-false.com/2010/install-mongodb-on-fedora-centos-red-hat-rhel/
+http://mondotech.blogspot.com.br/2011/04/install-mongodb-on-rhel-or-centos.html
+http://www.10gen.com/static/downloads/mongodb_on_rhel.pdf
+http://docs.mongodb.org/manual/tutorial/install-mongodb-on-redhat-centos-or-fedora-linux/

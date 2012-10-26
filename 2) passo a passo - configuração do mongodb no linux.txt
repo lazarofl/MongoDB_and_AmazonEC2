@@ -1,0 +1,80 @@
+#crie um volume EBS no console da amazon com 10GB
+#associe-o a instancia do database
+
+#formatar o volume em formato ext4 usando o comando abaixo (ext4 possui suporte a journaling, fundamental para manter a consistência dos dados)
+sudo mkfs -t ext4 /dev/*the_connection_you_attached_the_volume_to_for_example_sdf*
+
+#criar os diretórios para database
+sudo mkdir -p /data/db/
+sudo chown root /data/db
+
+#enumerar o volume inserindo-o no final do arquivo fstab (você também pode utilizar o utilitário 'vi' se necessário)
+sudo echo '/dev/sdf /data/db auto noatime,noexec,nodiratime 0 0' >> /etc/fstab
+
+#montar o volume
+sudo mount -a /dev/sdf /data/db
+
+#crie um arquivo de repositório para baixar o mongodb
+sudo vi /etc/yum.repos.d/10gen.repo
+
+#aperte a tecla INSERT para liberar a edição do arquivo e forneça o conteúdo abaixo (
+# estou usando as urls com base neste link do mongodb http://docs.mongodb.org/manual/tutorial/install-mongodb-on-redhat-centos-or-fedora-linux/)
+[10gen]
+name=10gen Repository
+baseurl=http://downloads-distro.mongodb.org/repo/redhat/os/x86_64
+gpgcheck=0
+
+#Finalize a edição do arquivo pressionando ESC, em seguida salve o arquivo utilizando o comando 'x:', tudo conforme abaixo
+ESC ENTER
+x: ENTER
+
+#baixe os pacotes
+sudo yum install mongo-10gen mongo-10gen-server
+
+#edite o arquivo de configuração do mongodb utilizando o vi
+sudo vi /etc/mongod.conf
+
+#aperte a tecla INSERT para liberar a edição e altere as configurações somente os itens abaixo, descomentando-os (caso não exista registro insira-o)
+oplogSize = 8000
+journal = true
+dbpath = /data/db
+logpath = /data/db/logs
+bind_ip = ip_do_servidor_web_na_amazon,ip_do_sindiconet_para_conexao_via_visual_studio
+
+#insira a porta 27017 no Secutiry Group da amazon via console
+
+#inicie o servidor do mongodb
+sudo /etc/init.d/mongod start
+
+#em caso de problemas com permissão
+sudo chmod 777 /data/db
+
+#aplique o comando abaixo para iniciar o serviço do mongod sempre que a máquina for inicializada
+sudo chkconfig mongod on
+
+
+---------------------UTILITÁRIOS-------------------------------------------
+#para visualizar os discos utilize o comando df
+df
+ --- ou
+df -h #-h significa human readable
+
+#se necessário reiniciar o servidor do mongodb utilize o comando abaixo
+sudo service mongod restart
+
+############ backup ######-------http://www.mongodb.org/pages/viewpage.action?pageId=19562846-------#################
+#se necessário efetuar o backup você precisará travar o mongodb e fazer o snapshot do volume contendo a /data/db  conforme abaixo
+#IMPORTANTE, execute o 'mongo' para realizar os procedimentos de lock da base de dados
+mongo
+use admin;
+db.runCommand({"fsync":1; "lock":1})
+
+#crie o snapshot diretamente no console da amazon
+
+#destrave o mongodb e pronto!!!
+db.$cmd.sys.unlock.findOne();
+###########################################
+
+#pesquisa em todo o diretório
+sudo find  -name "mongod*"
+
