@@ -87,7 +87,7 @@ service httpd restart
 service mysqld restart
 
 #criando a senha para o phpmyadmin
-/usr/bin/mysqladmin -u root password '102030@a'
+/usr/bin/mysqladmin -u root password '101010@10'
 
 #altere outro arquivo de configuração do phpmyadmin
 vi /usr/share/phpmyadmin/config.inc.php
@@ -104,9 +104,9 @@ $cfg['Servers'][$i]['auth_type'] = 'http';
 ####
 
 #acesse novamente o endereço do servidor de database, e entre na pasta phpmyadmin, pronto!!!
-ex: http://54.232.123.164/phpmyadmin/
+ex: http://54.123.123.123/phpmyadmin/
 user: root
-senha: 102030@a
+senha: 101010@10
 
 
 ################## SNAPSHOT DATABASE SERVER ###########################
